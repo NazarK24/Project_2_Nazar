@@ -22,7 +22,7 @@ resource "aws_subnet" "public" {
 resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.this.id
   cidr_block        = var.private_subnet_cidr
-  availability_zone = "eu-north-1a"
+  availability_zone = "eu-north-1b"
   tags = merge(var.common_tags, { Name = "my-demo-private-subnet" })
 }
 

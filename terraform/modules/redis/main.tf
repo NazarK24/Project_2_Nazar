@@ -30,7 +30,7 @@ resource "aws_elasticache_replication_group" "this" {
   description          = "My Demo Redis"             # заміна replication_group_description
   engine               = "redis"
   engine_version       = "6.x"
-  node_type            = "cache.t2.micro"
+  node_type            = "cache.t3.micro"
 
   # Коли хочемо 1 shard без реплік:
   num_node_groups         = 1        # 1 shard
