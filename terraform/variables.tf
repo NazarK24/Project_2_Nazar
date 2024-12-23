@@ -36,9 +36,11 @@ variable "db_username" {
 variable "db_password" {
   type    = string
   default = "mypassword1"
+  sensitive = true
 }
 
 variable "redis_password" {
   type    = string
-  default = "mypassword1"
+  default = "mypassword1mypassword1"
+  sensitive = true
 }

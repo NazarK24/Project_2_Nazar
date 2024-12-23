@@ -66,13 +66,13 @@ resource "aws_launch_configuration" "ecs_lc" {
   instance_type        = var.ecs_instance_type
   iam_instance_profile = aws_iam_instance_profile.ecs_instance_profile.name
   security_groups      = [aws_security_group.ecs_sg.id]
-  user_data            = file("${path.module}/../ecs_user_data.sh")
+  user_data            = file("${path.root}/ecs_user_data.sh")
+
   lifecycle {
     create_before_destroy = true
   }
-
-  tags = merge(var.common_tags, { Name = "ecs-lc" })
 }
+
 
 #############################
 # Auto Scaling Group
@@ -85,13 +85,22 @@ resource "aws_autoscaling_group" "ecs_asg" {
   desired_capacity     = 1
   vpc_zone_identifier  = [var.private_subnet_id]
 
+  # Статичний тег
   tag {
     key                 = "Name"
     value               = "ecs-asg"
     propagate_at_launch = true
   }
 
-  tags = merge(var.common_tags, { Name = "ecs-asg" })
+  # Якщо хочете підхопити var.common_tags:
+  dynamic "tag" {
+    for_each = var.common_tags
+    content {
+      key                 = tag.key
+      value               = tag.value
+      propagate_at_launch = true
+    }
+  }
 }
 
 #############################
