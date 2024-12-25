@@ -60,13 +60,20 @@ data "aws_ami" "ecs_optimized" {
   }
 }
 
-resource "aws_launch_configuration" "ecs_lc" {
-  name_prefix          = "ecs-lc-"
-  image_id             = data.aws_ami.ecs_optimized.id
-  instance_type        = var.ecs_instance_type
-  iam_instance_profile = aws_iam_instance_profile.ecs_instance_profile.name
-  security_groups      = [aws_security_group.ecs_sg.id]
-  user_data            = file("${path.root}/ecs_user_data.sh")
+resource "aws_launch_template" "ecs_lt" {
+  name_prefix   = "ecs-lt-"
+  image_id      = data.aws_ami.ecs_optimized.id
+  instance_type = var.ecs_instance_type
+  iam_instance_profile {
+    name = aws_iam_instance_profile.ecs_instance_profile.name
+  }
+  security_groups = [aws_security_group.ecs_sg.id]
+  user_data       = file("${path.root}/ecs_user_data.sh")
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = merge(var.common_tags, { Name = "ecs-instance" })
+  }
 
   lifecycle {
     create_before_destroy = true
@@ -79,20 +86,21 @@ resource "aws_launch_configuration" "ecs_lc" {
 #############################
 resource "aws_autoscaling_group" "ecs_asg" {
   name                 = "ecs-asg"
-  launch_configuration = aws_launch_configuration.ecs_lc.name
+  launch_template {
+    id      = aws_launch_template.ecs_lt.id
+    version = "$Latest"
+  }
   min_size             = 1
-  max_size             = 1
-  desired_capacity     = 1
-  vpc_zone_identifier  = [var.private_subnet_id]
+  max_size             = 3  # Збільшено максимальний розмір для кращої масштабованості
+  desired_capacity     = 2
+  vpc_zone_identifier  = aws_subnet.private[*].id  # Використовуємо всі приватні підмережі
 
-  # Статичний тег
   tag {
     key                 = "Name"
     value               = "ecs-asg"
     propagate_at_launch = true
   }
 
-  # Якщо хочете підхопити var.common_tags:
   dynamic "tag" {
     for_each = var.common_tags
     content {
@@ -100,6 +108,13 @@ resource "aws_autoscaling_group" "ecs_asg" {
       value               = tag.value
       propagate_at_launch = true
     }
+  }
+
+  health_check_type         = "EC2"
+  health_check_grace_period = 300
+
+  lifecycle {
+    create_before_destroy = true
   }
 }
 

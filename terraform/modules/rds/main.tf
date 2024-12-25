@@ -21,8 +21,12 @@ resource "aws_security_group" "rds_sg" {
 
 resource "aws_db_subnet_group" "this" {
   name       = "my-demo-db-subnet-group"
-  subnet_ids = [var.private_subnet_id]
-  tags       = merge(var.common_tags, { Name = "my-demo-db-subnet-group" })
+  subnet_ids = aws_subnet.private[*].id  
+  tags       = var.common_tags
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_db_instance" "this" {

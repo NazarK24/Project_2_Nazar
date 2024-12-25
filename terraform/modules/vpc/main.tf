@@ -19,11 +19,26 @@ resource "aws_subnet" "public" {
   tags = merge(var.common_tags, { Name = "my-demo-public-subnet" })
 }
 
-resource "aws_subnet" "private" {
-  vpc_id            = aws_vpc.this.id
-  cidr_block        = var.private_subnet_cidr
+resource "aws_subnet" "private_1" {
+  count           = length(var.private_subnet_cidr_1)
+  vpc_id          = aws_vpc.this.id
+  cidr_block      = var.private_subnet_cidr_1[count.index]
   availability_zone = "eu-north-1b"
-  tags = merge(var.common_tags, { Name = "my-demo-private-subnet" })
+  tags = merge(
+    var.common_tags,
+    { Name = "private-subnet-1-${count.index + 1}" }
+  )
+}
+
+resource "aws_subnet" "private_2" {
+  count           = length(var.private_subnet_cidr_2)
+  vpc_id          = aws_vpc.this.id
+  cidr_block      = var.private_subnet_cidr_2[count.index]
+  availability_zone = "eu-north-1c"
+  tags = merge(
+    var.common_tags,
+    { Name = "private-subnet-2-${count.index + 1}" }
+  )
 }
 
 # Публічна RT

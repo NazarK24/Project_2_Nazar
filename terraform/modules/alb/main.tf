@@ -20,12 +20,12 @@ resource "aws_security_group" "alb_sg" {
 }
 
 resource "aws_lb" "this" {
-  name               = var.alb_name
+  name               = "my-demo-alb"
+  internal           = false
   load_balancer_type = "application"
+  subnets            = aws_subnet.private[*].id  # Використовуємо всі приватні підмережі
   security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = [var.public_subnet_id]
-
-  tags = merge(var.common_tags, { Name = var.alb_name })
+  tags               = var.common_tags
 }
 
 resource "aws_lb_target_group" "this" {
