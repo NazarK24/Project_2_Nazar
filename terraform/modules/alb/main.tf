@@ -23,7 +23,7 @@ resource "aws_lb" "this" {
   name               = "my-demo-alb"
   internal           = false
   load_balancer_type = "application"
-  subnets            = aws_subnet.private[*].id  # Використовуємо всі приватні підмережі
+  subnets            = var.subnets
   security_groups    = [aws_security_group.alb_sg.id]
   tags               = var.common_tags
 }

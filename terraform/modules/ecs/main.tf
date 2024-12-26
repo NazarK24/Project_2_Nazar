@@ -67,7 +67,7 @@ resource "aws_launch_template" "ecs_lt" {
   iam_instance_profile {
     name = aws_iam_instance_profile.ecs_instance_profile.name
   }
-  security_groups = [aws_security_group.ecs_sg.id]
+  vpc_security_group_ids = [aws_security_group.ecs_sg.id]
   user_data       = file("${path.root}/ecs_user_data.sh")
 
   tag_specifications {
@@ -93,7 +93,7 @@ resource "aws_autoscaling_group" "ecs_asg" {
   min_size             = 1
   max_size             = 3  # Збільшено максимальний розмір для кращої масштабованості
   desired_capacity     = 2
-  vpc_zone_identifier  = aws_subnet.private[*].id  # Використовуємо всі приватні підмережі
+  vpc_zone_identifier  = var.private_subnets 
 
   tag {
     key                 = "Name"

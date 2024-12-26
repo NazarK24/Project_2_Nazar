@@ -2,8 +2,8 @@ variable "vpc_id" {
   type = string
 }
 
-variable "private_subnet_id" {
-  type = string
+variable "private_subnets" {
+  type = list(string)
 }
 
 variable "ecs_cluster_name" {

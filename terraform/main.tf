@@ -32,7 +32,7 @@ module "ecs" {
   source = "./modules/ecs"
 
   vpc_id                   = module.vpc.vpc_id
-  private_subnet_id        = module.vpc.private_subnet_id
+  private_subnets          = module.vpc.private_subnets
   ecs_cluster_name         = "my-demo-ecs-cluster"
   ecs_instance_type        = "t2.micro"         # free-tier
   container_port           = 8000
@@ -55,7 +55,7 @@ module "ecs" {
 module "alb" {
   source         = "./modules/alb"
   vpc_id         = module.vpc.vpc_id
-  public_subnet_id  = module.vpc.public_subnet_id
+  subnets = [module.vpc.public_subnet_id]
   alb_name       = "my-demo-alb"
   container_port = 8000
   ecs_sg_id      = module.ecs.ecs_sg_id
@@ -68,7 +68,7 @@ module "alb" {
 module "rds" {
   source               = "./modules/rds"
   vpc_id               = module.vpc.vpc_id
-  private_subnet_id    = module.vpc.private_subnet_id
+  private_subnets    = module.vpc.private_subnets
   db_name              = var.db_name
   db_username          = var.db_username
   db_password          = var.db_password
@@ -82,7 +82,7 @@ module "rds" {
 module "redis" {
   source             = "./modules/redis"
   vpc_id             = module.vpc.vpc_id
-  private_subnet_id  = module.vpc.private_subnet_id
+  private_subnets  = module.vpc.private_subnets
   redis_password     = var.redis_password
   common_tags        = var.common_tags
   ecs_sg_id          = module.ecs.ecs_sg_id

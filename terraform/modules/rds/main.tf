@@ -21,7 +21,7 @@ resource "aws_security_group" "rds_sg" {
 
 resource "aws_db_subnet_group" "this" {
   name       = "my-demo-db-subnet-group"
-  subnet_ids = aws_subnet.private[*].id  
+  subnet_ids = var.private_subnets
   tags       = var.common_tags
 
   lifecycle {

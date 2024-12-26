@@ -21,7 +21,7 @@ resource "aws_security_group" "redis_sg" {
 
 resource "aws_elasticache_subnet_group" "this" {
   name       = "my-demo-redis-subnet-group"
-  subnet_ids = [var.private_subnet_id]
+  subnet_ids = var.private_subnets
   tags       = merge(var.common_tags, { Name = "my-demo-redis-subnet-group" })
 }
 
