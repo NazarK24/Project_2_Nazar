@@ -5,8 +5,8 @@
       "essential": true,
       "portMappings": [
         {
-          "containerPort": ${CONTAINER_PORT},
-          "hostPort": ${CONTAINER_PORT}
+          "containerPort": "${CONTAINER_PORT}",
+          "hostPort": "${CONTAINER_PORT}"
         }
       ],
       "environment": [

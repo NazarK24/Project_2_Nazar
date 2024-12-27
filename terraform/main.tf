@@ -6,9 +6,10 @@
 module "vpc" {
   source                  = "./modules/vpc"
   vpc_cidr                = var.vpc_cidr
-  public_subnet_cidr      = var.public_subnet_cidr
+  public_subnet_cidr_1    = var.public_subnet_cidr_1
+  public_subnet_cidr_2    = var.public_subnet_cidr_2
   private_subnet_cidr_1   = var.private_subnet_cidr_1
-  private_subnet_cidr_2   = var.private_subnet_cidr_2
+  private_subnet_cidr_2 = var.private_subnet_cidr_2  
   common_tags             = var.common_tags
 }
 
@@ -55,7 +56,7 @@ module "ecs" {
 module "alb" {
   source         = "./modules/alb"
   vpc_id         = module.vpc.vpc_id
-  subnets = [module.vpc.public_subnet_id]
+  subnets = [module.vpc.public_subnets]
   alb_name       = "my-demo-alb"
   container_port = 8000
   ecs_sg_id      = module.ecs.ecs_sg_id
