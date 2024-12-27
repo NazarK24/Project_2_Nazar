@@ -9,7 +9,7 @@ module "vpc" {
   public_subnet_cidr_1    = var.public_subnet_cidr_1
   public_subnet_cidr_2    = var.public_subnet_cidr_2
   private_subnet_cidr_1   = var.private_subnet_cidr_1
-  private_subnet_cidr_2 = var.private_subnet_cidr_2  
+  private_subnet_cidr_2   = var.private_subnet_cidr_2  
   common_tags             = var.common_tags
 }
 
@@ -56,7 +56,7 @@ module "ecs" {
 module "alb" {
   source         = "./modules/alb"
   vpc_id         = module.vpc.vpc_id
-  subnets = [module.vpc.public_subnets]
+  subnets        = module.vpc.public_subnets
   alb_name       = "my-demo-alb"
   container_port = 8000
   ecs_sg_id      = module.ecs.ecs_sg_id
@@ -69,7 +69,7 @@ module "alb" {
 module "rds" {
   source               = "./modules/rds"
   vpc_id               = module.vpc.vpc_id
-  private_subnets    = module.vpc.private_subnets
+  private_subnets      = module.vpc.private_subnets
   db_name              = var.db_name
   db_username          = var.db_username
   db_password          = var.db_password
@@ -83,7 +83,7 @@ module "rds" {
 module "redis" {
   source             = "./modules/redis"
   vpc_id             = module.vpc.vpc_id
-  private_subnets  = module.vpc.private_subnets
+  private_subnets    = module.vpc.private_subnets
   redis_password     = var.redis_password
   common_tags        = var.common_tags
   ecs_sg_id          = module.ecs.ecs_sg_id
