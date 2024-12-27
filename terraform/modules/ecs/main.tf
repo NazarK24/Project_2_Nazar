@@ -68,7 +68,8 @@ resource "aws_launch_template" "ecs_lt" {
     name = aws_iam_instance_profile.ecs_instance_profile.name
   }
   vpc_security_group_ids = [aws_security_group.ecs_sg.id]
-  user_data       = file("${path.root}/ecs_user_data.sh")
+  user_data = filebase64("${path.module}/ecs_user_data.sh")
+
 
   tag_specifications {
     resource_type = "instance"

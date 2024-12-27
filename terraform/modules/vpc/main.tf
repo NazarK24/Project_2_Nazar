@@ -13,8 +13,18 @@ resource "aws_internet_gateway" "this" {
 
 resource "aws_subnet" "public_1" {
   vpc_id                  = aws_vpc.this.id
-  cidr_block             = var.public_subnet_cidr
+  cidr_block             = var.public_subnet_cidr_1
   availability_zone       = "eu-north-1a"
+  map_public_ip_on_launch = true
+  tags = {
+    Name = "Public_Subnet"
+  }
+}
+
+resource "aws_subnet" "public_2" {
+  vpc_id                  = aws_vpc.this.id
+  cidr_block             = var.public_subnet_cidr_2
+  availability_zone       = "eu-north-1b"
   map_public_ip_on_launch = true
   tags = {
     Name = "Public_Subnet"
