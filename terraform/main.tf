@@ -35,7 +35,7 @@ module "ecs" {
   vpc_id                   = module.vpc.vpc_id
   private_subnets          = module.vpc.private_subnets
   ecs_cluster_name         = "my-demo-ecs-cluster"
-  ecs_instance_type        = "t2.micro"         # free-tier
+  ecs_instance_type        = "t3.micro"         # free-tier
   container_port           = 8000
   common_tags              = var.common_tags
 
