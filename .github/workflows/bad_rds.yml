@@ -1,0 +1,68 @@
+name: Deploy and Build RDS
+
+on:
+  push:
+      branches:
+          - main 
+      paths:
+          - backend_rds/**
+
+jobs:
+  build-push-ecr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        run: |
+          aws ecr get-login-password --region ${{ vars.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com
+
+      - name: Build and Push Docker images
+        run: |
+          COMMIT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          docker build -t backend_rds:$COMMIT_SHA ./backend_rds
+          docker tag backend_rds:$COMMIT_SHA ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/backend_rds:$COMMIT_SHA
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/backend_rds:$COMMIT_SHA
+
+  deploy-backend:
+    needs: build-push-ecr
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Copy Compose File to EC2
+        run: |
+          scp -o StrictHostKeyChecking=no ./docker-compose.yml ubuntu@${{ vars.EC2_IP_ADDRESS }}:/home/ubuntu
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: SSH into EC2 and restart Docker containers
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ vars.EC2_IP_ADDRESS }} << EOF
+          yq e -i ".services.backend_rds.image = \"${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/backend_rds:$COMMIT_SHA\"" docker-compose.yml
+          cd /home/ubuntu
+          aws ecr get-login-password --region ${{ vars.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com
+          docker-compose down
+          docker-compose pull
+          docker-compose up -d
+          EOF
