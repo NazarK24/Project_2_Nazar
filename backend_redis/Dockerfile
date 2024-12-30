@@ -1,6 +1,10 @@
 # Вибираємо офіційний базовий образ Python
 FROM python:3.11-slim
 
+# Додаємо метаінформацію про образ
+LABEL maintainer="your_email@example.com"
+LABEL version="0.0.1"
+
 # Встановлюємо робочу директорію всередині контейнера
 WORKDIR /app
 

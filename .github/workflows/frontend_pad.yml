@@ -1,9 +1,9 @@
-name: RDS Push and Deploy
+name: Frontend Push and Deploy
 
 on:
   push:
     paths:
-      - 'backend_rds/**'
+      - 'frontend/**'
       - 'terraform/**'
 
 jobs:
@@ -21,15 +21,15 @@ jobs:
 
       - name: Update Dockerfile version
         run: |
-          sed -i "s/^LABEL version=.*$/LABEL version=\"$IMAGE_VERSION\"/" ./backend_rds/Dockerfile
-          cat ./backend_rds/Dockerfile
+          sed -i "s/^LABEL version=.*$/LABEL version=\"$IMAGE_VERSION\"/" ./frontend/Dockerfile
+          cat ./frontend/Dockerfile
 
       - name: Commit Dockerfile changes
         if: github.ref_name == 'main'
         run: |
           git config --global user.email "ci-bot@example.com"
           git config --global user.name "GitHub Actions Bot"
-          git add ./backend_rds/Dockerfile
+          git add ./frontend/Dockerfile
           git commit -m "Update Dockerfile version to $IMAGE_VERSION" || echo "No changes to commit"
           git push origin main
 
@@ -46,12 +46,12 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t backend-rds:$IMAGE_VERSION ./backend_rds
+          docker build -t frontend:$IMAGE_VERSION ./frontend
 
       - name: Tag and push Docker image
         run: |
-          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend-rds:$IMAGE_VERSION
-          docker tag backend-rds:$IMAGE_VERSION $IMAGE_URI
+          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend:$IMAGE_VERSION
+          docker tag frontend:$IMAGE_VERSION $IMAGE_URI
           docker push $IMAGE_URI
 
   deploy:
@@ -62,5 +62,5 @@ jobs:
         run: |
           aws ecs update-service \
             --cluster ${CLUSTER_NAME} \
-            --service backend-rds-service \
+            --service frontend-service \
             --force-new-deployment
