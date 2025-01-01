@@ -7,7 +7,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-LABEL version="0.0.1"
+ARG VERSION=unknown
+LABEL version=$VERSION
 
 EXPOSE 8000
 

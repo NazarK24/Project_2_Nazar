@@ -2,8 +2,8 @@
 FROM python:3.11-slim
 
 # Додаємо метаінформацію про образ
-LABEL maintainer="your_email@example.com"
-LABEL version="0.0.1"
+ARG VERSION=unknown
+LABEL version=$VERSION
 
 # Встановлюємо робочу директорію всередині контейнера
 WORKDIR /app
