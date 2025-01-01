@@ -22,7 +22,6 @@ jobs:
       - name: Update Dockerfile version
         run: |
           sed -i "s/^LABEL version=.*$/LABEL version=\"$IMAGE_VERSION\"/" ./frontend/Dockerfile
-          cat ./frontend/Dockerfile
 
       - name: Commit Dockerfile changes
         if: github.ref_name == 'main'
@@ -50,7 +49,7 @@ jobs:
 
       - name: Tag and push Docker image
         run: |
-          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend:$IMAGE_VERSION
+          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/frontend:$IMAGE_VERSION
           docker tag frontend:$IMAGE_VERSION $IMAGE_URI
           docker push $IMAGE_URI
 
@@ -61,6 +60,6 @@ jobs:
       - name: Deploy to ECS
         run: |
           aws ecs update-service \
-            --cluster ${CLUSTER_NAME} \
+            --cluster ${{ vars.CLUSTER_NAME}} \
             --service frontend-service \
             --force-new-deployment

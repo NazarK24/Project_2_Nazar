@@ -1,4 +1,4 @@
-name: Redis Push and Deploy
+name: RDS Push and Deploy
 
 on:
   push:
@@ -18,11 +18,7 @@ jobs:
         run: |
           VERSION=$(echo "${{ github.sha }}" | cut -c1-7)
           echo "IMAGE_VERSION=$VERSION" >> $GITHUB_ENV
-
-      - name: Update Dockerfile version
-        run: |
           sed -i "s/^LABEL version=.*$/LABEL version=\"$IMAGE_VERSION\"/" ./backend_redis/Dockerfile
-          cat ./backend_redis/Dockerfile
 
       - name: Commit Dockerfile changes
         if: github.ref_name == 'main'
@@ -50,7 +46,7 @@ jobs:
 
       - name: Tag and push Docker image
         run: |
-          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend-redis:$IMAGE_VERSION
+          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/backend-redis:$IMAGE_VERSION
           docker tag backend-redis:$IMAGE_VERSION $IMAGE_URI
           docker push $IMAGE_URI
 
@@ -61,6 +57,6 @@ jobs:
       - name: Deploy to ECS
         run: |
           aws ecs update-service \
-            --cluster ${CLUSTER_NAME} \
+            --cluster ${{ vars.CLUSTER_NAME}} \
             --service backend-redis-service \
             --force-new-deployment
