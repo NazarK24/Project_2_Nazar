@@ -8,7 +8,7 @@ LABEL version="0.0.1"
 # Встановлюємо робочу директорію всередині контейнера
 WORKDIR /app
 
-# Копіюємо файл requirements.txt і встановлюємо залежності
+# Копіюємо файл requirements.txt і встановлюємо залежност
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
