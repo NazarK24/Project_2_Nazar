@@ -34,14 +34,14 @@ jobs:
         run: |
           # Використовуємо $IMAGE_VERSION як build-arg
           docker build \
-            -t backend-rds:$IMAGE_VERSION \
+            -t my-demo-backend-rds:$IMAGE_VERSION \
             --build-arg VERSION=$IMAGE_VERSION \
             ./backend_rds
 
       - name: Tag and push Docker image
         run: |
           IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/backend-rds:$IMAGE_VERSION
-          docker tag backend-rds:$IMAGE_VERSION $IMAGE_URI
+          docker tag my-demo-backend-rds:$IMAGE_VERSION $IMAGE_URI
           docker push $IMAGE_URI
 
   deploy:
