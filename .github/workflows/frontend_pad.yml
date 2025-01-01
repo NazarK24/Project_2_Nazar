@@ -39,7 +39,7 @@ jobs:
 
       - name: Tag and push Docker image
         run: |
-          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/frontend:$IMAGE_VERSION
+          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/my-demo-frontend:$IMAGE_VERSION
           docker tag my-demo-frontend:$IMAGE_VERSION $IMAGE_URI
           docker push $IMAGE_URI
 
