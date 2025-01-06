@@ -137,12 +137,47 @@ resource "aws_ecs_task_definition" "frontend_task" {
       DB_USER            = var.db_user
       DB_PASSWORD        = var.db_password
       REDIS_PASSWORD     = var.redis_password
-      CONTAINER_PORT     = var.container_port
+      CONTAINER_PORT     = var.frontend_container_port
     }
   )
 }
 
-# Аналогічно backend_rds_task, backend_redis_task...
+resource "aws_ecs_task_definition" "backend_rds_task" {
+  family                   = "backend-rds-task"
+  requires_compatibilities = ["EC2"]
+  network_mode             = "bridge"
+  cpu                      = 256
+  memory                   = 512
+
+  container_definitions = templatefile(
+    "${path.module}/templates/backend_rds_container.json",
+    {
+      BACKEND_RDS_IMAGE_URL = var.backend_rds_image_url
+      DB_NAME               = var.db_name
+      DB_USER               = var.db_user
+      DB_PASSWORD           = var.db_password
+      CONTAINER_PORT        = var.backend_rds_container_port
+    }
+  )
+}
+
+resource "aws_ecs_task_definition" "backend_redis_task" {
+  family                   = "backend-redis-task"
+  requires_compatibilities = ["EC2"]
+  network_mode             = "bridge"
+  cpu                      = 256
+  memory                   = 512
+
+  container_definitions = templatefile(
+    "${path.module}/templates/backend_redis_container.json",
+    {
+      BACKEND_REDIS_IMAGE_URL = var.backend_redis_image_url
+      REDIS_PASSWORD          = var.redis_password
+      CONTAINER_PORT          = var.backend_redis_container_port
+    }
+  )
+}
+
 
 #############################
 # ECS Services (приклад один)
@@ -151,7 +186,33 @@ resource "aws_ecs_service" "frontend_service" {
   name            = "frontend-service"
   cluster         = aws_ecs_cluster.this.id
   launch_type     = "EC2"
-  desired_count   = 1
+  desired_count   = var.frontend_desired_count
   task_definition = aws_ecs_task_definition.frontend_task.arn
-  # ALB та TargetGroups можна описати або в цьому модулі, або в ALB-модулі...
+
+  # Optional ALB Configuration
+  load_balancer {
+    target_group_arn = aws_lb_target_group.frontend_target_group.arn
+    container_name   = "frontend"
+    container_port   = var.frontend_container_port
+  }
+
+  depends_on = [
+    aws_lb_listener.frontend_listener
+  ]
+}
+
+resource "aws_ecs_service" "backend_rds_service" {
+  name            = "backend-rds-service"
+  cluster         = aws_ecs_cluster.this.id
+  launch_type     = "EC2"
+  desired_count   = var.backend_rds_desired_count
+  task_definition = aws_ecs_task_definition.backend_rds_task.arn
+}
+
+resource "aws_ecs_service" "backend_redis_service" {
+  name            = "backend-redis-service"
+  cluster         = aws_ecs_cluster.this.id
+  launch_type     = "EC2"
+  desired_count   = var.backend_redis_desired_count
+  task_definition = aws_ecs_task_definition.backend_redis_task.arn
 }
