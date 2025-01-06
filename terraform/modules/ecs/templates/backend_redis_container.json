@@ -1,0 +1,19 @@
+[
+    {
+      "name": "backend-redis",
+      "image": "${BACKEND_REDIS_IMAGE_URL}",
+      "cpu": 256,
+      "memory": 512,
+      "portMappings": [
+        {
+          "containerPort": ${CONTAINER_PORT},
+          "hostPort": ${CONTAINER_PORT}
+        }
+      ],
+      "environment": [
+        { "name": "REDIS_PASSWORD", "value": "${REDIS_PASSWORD}" }
+      ],
+      "essential": true
+    }
+  ]
+  

@@ -2,20 +2,13 @@ variable "vpc_id" {
   type = string
 }
 
-variable "subnets" {
+variable "public_subnets" {
   type = list(string)
 }
 
-variable "alb_name" {
-  type = string
-}
-
-variable "container_port" {
-  type = number
-}
-
-variable "ecs_sg_id" {
-  type = string
+variable "frontend_container_port" {
+  type    = number
+  default = 80
 }
 
 variable "common_tags" {

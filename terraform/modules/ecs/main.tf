@@ -191,13 +191,13 @@ resource "aws_ecs_service" "frontend_service" {
 
   # Optional ALB Configuration
   load_balancer {
-    target_group_arn = aws_lb_target_group.frontend_target_group.arn
+    target_group_arn = var.frontend_target_group_arn
     container_name   = "frontend"
     container_port   = var.frontend_container_port
   }
 
   depends_on = [
-    aws_lb_listener.frontend_listener
+    var.frontend_listener_arn
   ]
 }
 

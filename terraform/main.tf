@@ -48,20 +48,23 @@ module "ecs" {
   db_user                  = var.db_username
   db_password              = var.db_password
   redis_password           = var.redis_password
+
+  # Ресурси для ALB
+  frontend_target_group_arn = module.alb.frontend_target_group_arn
+  frontend_listener_arn     = module.alb.frontend_listener_arn
 }
 
 ############
 # ALB
 ############
 module "alb" {
-  source         = "./modules/alb"
-  vpc_id         = module.vpc.vpc_id
-  subnets        = module.vpc.public_subnets
-  alb_name       = "my-demo-alb"
-  container_port = 8000
-  ecs_sg_id      = module.ecs.ecs_sg_id
-  common_tags    = var.common_tags
+  source           = "./modules/alb"
+  vpc_id           = module.vpc.vpc_id 
+  public_subnets   = module.vpc.public_subnets
+  frontend_container_port = var.frontend_container_port 
+  common_tags      = var.common_tags
 }
+
 
 ############
 # RDS

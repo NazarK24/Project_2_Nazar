@@ -12,7 +12,20 @@ variable "ecs_cluster_name" {
 
 variable "ecs_instance_type" {
   type    = string
-  default = "t2.micro"
+  default = "t3.micro"
+}
+
+variable "container_port" {
+  type    = number
+  default = 8000
+}
+
+variable "frontend_target_group_arn" {
+  type = string
+}
+
+variable "frontend_listener_arn" {
+  type = string
 }
 
 # Frontend Variables
