@@ -10,6 +10,10 @@ variable "ecs_cluster_name" {
   type = string
 }
 
+variable "alb_sg_id" {
+  type = string
+}
+
 variable "ecs_instance_type" {
   type    = string
   default = "t3.micro"

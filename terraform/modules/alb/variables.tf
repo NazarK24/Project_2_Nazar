@@ -8,7 +8,7 @@ variable "public_subnets" {
 
 variable "frontend_container_port" {
   type    = number
-  default = 80
+  default = 8000
 }
 
 variable "common_tags" {

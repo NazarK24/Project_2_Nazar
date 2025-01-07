@@ -12,11 +12,17 @@ resource "aws_ecs_cluster" "this" {
 resource "aws_security_group" "ecs_sg" {
   name   = "${var.ecs_cluster_name}-sg"
   vpc_id = var.vpc_id
-
-  # ingress, egress додамо за потреби...
-  # Ми зазвичай дозволимо inbound з ALB і outbound - будь-куди в VPC.
-
   tags = merge(var.common_tags, { Name = "${var.ecs_cluster_name}-sg" })
+}
+
+resource "aws_security_group_rule" "allow_alb_to_ecs_ingress" {
+  security_group_id        = aws_security_group.ecs_sg.id
+  type                     = "ingress"
+  from_port                = 8000
+  to_port                  = 8000
+  protocol                 = "tcp"
+  source_security_group_id = var.alb_sg_id
+  description              = "Allow ALB access on port 8000"
 }
 
 #############################

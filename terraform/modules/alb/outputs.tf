@@ -9,3 +9,7 @@ output "frontend_target_group_arn" {
 output "frontend_listener_arn" {
   value = aws_lb_listener.frontend_listener.arn
 }
+
+output "alb_sg_id" {
+  value = aws_security_group.alb_sg.id
+}
