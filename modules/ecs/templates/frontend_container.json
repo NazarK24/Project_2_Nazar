@@ -1,0 +1,8 @@
+[
+  {
+    "environment": [
+      { "name": "BACKEND_RDS_URL", "value": "http://backend-rds:8001" },
+      { "name": "BACKEND_REDIS_URL", "value": "http://backend-redis:8002" }
+    ]
+  }
+] 

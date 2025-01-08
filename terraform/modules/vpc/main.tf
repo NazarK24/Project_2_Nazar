@@ -49,6 +49,17 @@ resource "aws_subnet" "private_2" {
   }
 }
 
+# NAT Gateway
+resource "aws_eip" "this" {
+  tags = merge(var.common_tags, { Name = "my-demo-eip" })
+}
+
+resource "aws_nat_gateway" "this" {
+  allocation_id = aws_eip.this.id
+  subnet_id     = aws_subnet.public_1.id
+  tags          = merge(var.common_tags, { Name = "my-demo-nat-gw" })
+}
+
 # Публічна RT
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.this.id
@@ -71,10 +82,16 @@ resource "aws_route_table_association" "public_assoc_2" {
   route_table_id = aws_route_table.public.id
 }
 
-# Приватна RT (без NAT)
+# Приватна RT (з NAT)
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.this.id
   tags   = merge(var.common_tags, { Name = "my-demo-private-rt" })
+}
+
+resource "aws_route" "private_route" {
+  route_table_id         = aws_route_table.private.id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.this.id
 }
 
 resource "aws_route_table_association" "private_assoc_1" {

@@ -13,7 +13,7 @@ resource "aws_lb_target_group" "frontend_target_group" {
   port        = var.frontend_container_port
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
-  target_type = "instance"  
+  target_type = "ip"
 
   health_check {
     path                = "/"
@@ -73,4 +73,22 @@ resource "aws_security_group" "alb_sg" {
   ]
 
   tags = merge(var.common_tags, { Name = "alb-sg" })
+}
+
+resource "aws_security_group_rule" "allow_alb_to_ecs_ingress_backend_rds" {
+  security_group_id        = aws_security_group.ecs_sg.id
+  type                     = "ingress"
+  from_port                = 8001
+  to_port                  = 8001
+  protocol                 = "tcp"
+  source_security_group_id = var.alb_sg_id
+}
+
+resource "aws_security_group_rule" "allow_alb_to_ecs_ingress_backend_redis" {
+  security_group_id        = aws_security_group.ecs_sg.id
+  type                     = "ingress"
+  from_port                = 8002
+  to_port                  = 8002
+  protocol                 = "tcp"
+  source_security_group_id = var.alb_sg_id
 }

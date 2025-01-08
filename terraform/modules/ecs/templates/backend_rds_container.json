@@ -6,8 +6,8 @@
       "memory": 512,
       "portMappings": [
         {
-          "containerPort": ${CONTAINER_PORT},
-          "hostPort": ${CONTAINER_PORT}
+          "containerPort": 8001,
+          "hostPort": 8001
         }
       ],
       "environment": [
