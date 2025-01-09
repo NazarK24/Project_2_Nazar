@@ -24,7 +24,7 @@ variable "private_subnet_cidr_1" {
 }
 
 variable "private_subnet_cidr_2" {
-  type    = string 
+  type    = string
   default = "10.0.4.0/24"
 }
 
@@ -47,13 +47,38 @@ variable "db_username" {
 }
 
 variable "db_password" {
-  type      = string
-  default   = "mypassword1"
-  sensitive = true
+  type        = string
+  description = "Password for the database"
+  sensitive   = true
+
+  validation {
+    condition     = length(var.db_password) >= 16
+    error_message = "The db_password must be at least 16 characters long"
+  }
 }
 
 variable "redis_password" {
-  type      = string
-  default   = "mypassword1mypassword1"
-  sensitive = true
+  type        = string
+  description = "Password for Redis"
+  sensitive   = true
+
+  validation {
+    condition     = length(var.redis_password) >= 16
+    error_message = "The redis_password must be at least 16 characters long"
+  }
+}
+
+variable "frontend_image_tag" {
+  type    = string
+  default = "latest"
+}
+
+variable "backend_rds_image_tag" {
+  type    = string
+  default = "latest"
+}
+
+variable "backend_redis_image_tag" {
+  type    = string
+  default = "latest"
 }

@@ -1,5 +1,6 @@
 variable "vpc_id" {
-  type = string
+  type        = string
+  description = "ID of the VPC where resources will be created"
 }
 
 variable "private_subnets" {
@@ -95,4 +96,30 @@ variable "redis_password" {
 # Tags
 variable "common_tags" {
   type = map(string)
+}
+
+variable "db_host" {
+  type = string
+}
+
+variable "redis_host" {
+  type = string
+}
+
+variable "rds_sg_id" {
+  type = string
+}
+
+variable "redis_sg_id" {
+  type = string
+}
+
+variable "backend_rds_target_group_arn" {
+  type        = string
+  description = "ARN of the target group for backend RDS service"
+}
+
+variable "backend_redis_target_group_arn" {
+  type        = string
+  description = "ARN of the target group for backend Redis service"
 }

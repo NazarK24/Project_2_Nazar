@@ -3,6 +3,12 @@
 #############################
 resource "aws_ecs_cluster" "this" {
   name = var.ecs_cluster_name
+  
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
+
   tags = merge(var.common_tags, { Name = var.ecs_cluster_name })
 }
 
@@ -12,117 +18,55 @@ resource "aws_ecs_cluster" "this" {
 resource "aws_security_group" "ecs_sg" {
   name   = "${var.ecs_cluster_name}-sg"
   vpc_id = var.vpc_id
+
+  ingress {
+    from_port       = var.frontend_container_port
+    to_port         = var.frontend_container_port
+    protocol        = "tcp"
+    security_groups = [var.alb_sg_id]
+  }
+
+  ingress {
+    from_port       = 8001
+    to_port         = 8001
+    protocol        = "tcp"
+    security_groups = [var.alb_sg_id]
+  }
+
+  ingress {
+    from_port       = 8002
+    to_port         = 8002
+    protocol        = "tcp"
+    security_groups = [var.alb_sg_id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags = merge(var.common_tags, { Name = "${var.ecs_cluster_name}-sg" })
 }
 
-resource "aws_security_group_rule" "allow_alb_to_ecs_ingress" {
-  security_group_id        = aws_security_group.ecs_sg.id
-  type                     = "ingress"
-  from_port                = 8000
-  to_port                  = 8000
+# Додаємо окремі правила після створення всіх security groups
+resource "aws_security_group_rule" "ecs_to_rds" {
+  type                     = "egress"
+  from_port                = 5432
+  to_port                  = 5432
   protocol                 = "tcp"
-  source_security_group_id = var.alb_sg_id
-  description              = "Allow ALB access on port 8000"
+  security_group_id        = aws_security_group.ecs_sg.id
+  source_security_group_id = var.rds_sg_id
 }
 
-#############################
-# IAM Role for ECS EC2
-#############################
-data "aws_iam_policy_document" "ecs_instance_assume" {
-  statement {
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["ec2.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role" "ecs_instance_role" {
-  name               = "ecsInstanceRole"
-  assume_role_policy = data.aws_iam_policy_document.ecs_instance_assume.json
-  tags               = var.common_tags
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_instance_attach" {
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
-  role       = aws_iam_role.ecs_instance_role.name
-}
-
-resource "aws_iam_instance_profile" "ecs_instance_profile" {
-  name = "ecsInstanceProfile"
-  role = aws_iam_role.ecs_instance_role.name
-}
-
-#############################
-# Launch Configuration
-#############################
-data "aws_ami" "ecs_optimized" {
-  most_recent = true
-  owners      = ["amazon"]
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-ecs-hvm-*-x86_64-ebs"]
-  }
-}
-
-resource "aws_launch_template" "ecs_lt" {
-  name_prefix   = "ecs-lt-"
-  image_id      = data.aws_ami.ecs_optimized.id
-  instance_type = var.ecs_instance_type
-  iam_instance_profile {
-    name = aws_iam_instance_profile.ecs_instance_profile.name
-  }
-  vpc_security_group_ids = [aws_security_group.ecs_sg.id]
-  user_data = filebase64("${path.module}/ecs_user_data.sh")
-
-
-  tag_specifications {
-    resource_type = "instance"
-    tags = merge(var.common_tags, { Name = "ecs-instance" })
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-
-#############################
-# Auto Scaling Group
-#############################
-resource "aws_autoscaling_group" "ecs_asg" {
-  name                 = "ecs-asg"
-  launch_template {
-    id      = aws_launch_template.ecs_lt.id
-    version = "$Latest"
-  }
-  min_size             = 1
-  max_size             = 3  # Збільшено максимальний розмір для кращої масштабованості
-  desired_capacity     = 2
-  vpc_zone_identifier  = var.private_subnets 
-
-  tag {
-    key                 = "Name"
-    value               = "ecs-asg"
-    propagate_at_launch = true
-  }
-
-  dynamic "tag" {
-    for_each = var.common_tags
-    content {
-      key                 = tag.key
-      value               = tag.value
-      propagate_at_launch = true
-    }
-  }
-
-  health_check_type         = "EC2"
-  health_check_grace_period = 300
-
-  lifecycle {
-    create_before_destroy = true
-  }
+resource "aws_security_group_rule" "ecs_to_redis" {
+  type                     = "egress"
+  from_port                = 6379
+  to_port                  = 6379
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.ecs_sg.id
+  source_security_group_id = var.redis_sg_id
 }
 
 #############################
@@ -130,30 +74,35 @@ resource "aws_autoscaling_group" "ecs_asg" {
 #############################
 resource "aws_ecs_task_definition" "frontend_task" {
   family                   = "frontend-task"
-  requires_compatibilities = ["EC2"]
-  network_mode             = "bridge"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
   cpu                      = 256
   memory                   = 512
+  execution_role_arn       = aws_iam_role.ecs_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = templatefile(
     "${path.module}/templates/frontend_container.json",
     {
       FRONTEND_IMAGE_URL = var.frontend_image_url
-      DB_NAME            = var.db_name
-      DB_USER            = var.db_user
-      DB_PASSWORD        = var.db_password
-      REDIS_PASSWORD     = var.redis_password
-      CONTAINER_PORT     = var.frontend_container_port
+      DB_HOST           = var.db_host
+      DB_NAME           = var.db_name
+      DB_USER           = var.db_user
+      DB_PASSWORD       = var.db_password
+      REDIS_HOST        = var.redis_host
+      REDIS_PASSWORD    = var.redis_password
     }
   )
 }
 
 resource "aws_ecs_task_definition" "backend_rds_task" {
   family                   = "backend-rds-task"
-  requires_compatibilities = ["EC2"]
-  network_mode             = "bridge"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
   cpu                      = 256
   memory                   = 512
+  execution_role_arn       = aws_iam_role.ecs_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = templatefile(
     "${path.module}/templates/backend_rds_container.json",
@@ -162,17 +111,20 @@ resource "aws_ecs_task_definition" "backend_rds_task" {
       DB_NAME               = var.db_name
       DB_USER               = var.db_user
       DB_PASSWORD           = var.db_password
-      CONTAINER_PORT        = var.backend_rds_container_port
+      DB_HOST              = var.db_host
+      AWS_REGION           = "eu-north-1"
     }
   )
 }
 
 resource "aws_ecs_task_definition" "backend_redis_task" {
   family                   = "backend-redis-task"
-  requires_compatibilities = ["EC2"]
-  network_mode             = "bridge"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
   cpu                      = 256
   memory                   = 512
+  execution_role_arn       = aws_iam_role.ecs_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = templatefile(
     "${path.module}/templates/backend_redis_container.json",
@@ -191,34 +143,167 @@ resource "aws_ecs_task_definition" "backend_redis_task" {
 resource "aws_ecs_service" "frontend_service" {
   name            = "frontend-service"
   cluster         = aws_ecs_cluster.this.id
-  launch_type     = "EC2"
-  desired_count   = var.frontend_desired_count
   task_definition = aws_ecs_task_definition.frontend_task.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
 
-  # Optional ALB Configuration
+  network_configuration {
+    subnets          = var.private_subnets
+    security_groups  = [aws_security_group.ecs_sg.id]
+    assign_public_ip = false
+  }
+
   load_balancer {
     target_group_arn = var.frontend_target_group_arn
     container_name   = "frontend"
     container_port   = var.frontend_container_port
   }
-
-  depends_on = [
-    var.frontend_listener_arn
-  ]
 }
 
 resource "aws_ecs_service" "backend_rds_service" {
   name            = "backend-rds-service"
   cluster         = aws_ecs_cluster.this.id
-  launch_type     = "EC2"
-  desired_count   = var.backend_rds_desired_count
   task_definition = aws_ecs_task_definition.backend_rds_task.arn
+  desired_count   = var.backend_rds_desired_count
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = var.private_subnets
+    security_groups  = [aws_security_group.ecs_sg.id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = var.backend_rds_target_group_arn
+    container_name   = "backend-rds"
+    container_port   = var.backend_rds_container_port
+  }
 }
 
 resource "aws_ecs_service" "backend_redis_service" {
   name            = "backend-redis-service"
   cluster         = aws_ecs_cluster.this.id
-  launch_type     = "EC2"
-  desired_count   = var.backend_redis_desired_count
+  launch_type     = "FARGATE"
   task_definition = aws_ecs_task_definition.backend_redis_task.arn
+  desired_count   = var.backend_redis_desired_count
+
+  network_configuration {
+    subnets          = var.private_subnets
+    security_groups  = [aws_security_group.ecs_sg.id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = var.backend_redis_target_group_arn
+    container_name   = "backend-redis"
+    container_port   = var.backend_redis_container_port
+  }
+}
+
+#############################
+# IAM Role for CI/CD
+#############################
+resource "aws_iam_role" "cicd_role" {
+  name = "cicd-ecs-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "codebuild.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "cicd_policy" {
+  name = "cicd-ecs-policy"
+  role = aws_iam_role.cicd_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:UpdateService",
+          "ecs:DescribeServices",
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:PutImage",
+          "ecr:InitiateLayerUpload"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+#############################
+# IAM Role for Fargate
+#############################
+resource "aws_iam_role" "ecs_execution_role" {
+  name = "ecs-execution-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_execution_role_policy" {
+  role       = aws_iam_role.ecs_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+resource "aws_iam_role" "ecs_task_role" {
+  name = "ecs-task-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_role_policy" {
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+resource "aws_cloudwatch_log_group" "frontend" {
+  name              = "/ecs/frontend"
+  retention_in_days = 14
+  tags              = var.common_tags
+}
+
+resource "aws_cloudwatch_log_group" "backend_rds" {
+  name              = "/ecs/backend-rds"
+  retention_in_days = 14
+  tags              = var.common_tags
+}
+
+resource "aws_cloudwatch_log_group" "backend_redis" {
+  name              = "/ecs/backend-redis"
+  retention_in_days = 14
+  tags              = var.common_tags
 }

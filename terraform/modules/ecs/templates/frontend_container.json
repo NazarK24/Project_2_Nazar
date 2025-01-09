@@ -7,15 +7,26 @@
     "portMappings": [
       {
         "containerPort": 8000,
-        "hostPort": 8000
+        "hostPort": 8000,
+        "protocol": "tcp"
       }
     ],
     "environment": [
+      { "name": "DB_HOST", "value": "${DB_HOST}" },
       { "name": "DB_NAME", "value": "${DB_NAME}" },
       { "name": "DB_USER", "value": "${DB_USER}" },
       { "name": "DB_PASSWORD", "value": "${DB_PASSWORD}" },
+      { "name": "REDIS_HOST", "value": "${REDIS_HOST}" },
       { "name": "REDIS_PASSWORD", "value": "${REDIS_PASSWORD}" }
     ],
-    "essential": true
+    "essential": true,
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "/ecs/frontend",
+        "awslogs-region": "eu-north-1",
+        "awslogs-stream-prefix": "frontend"
+      }
+    }
   }
 ]

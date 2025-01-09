@@ -16,9 +16,7 @@ resource "aws_subnet" "public_1" {
   cidr_block             = var.public_subnet_cidr_1
   availability_zone       = "eu-north-1a"
   map_public_ip_on_launch = true
-  tags = {
-    Name = "Public_Subnet"
-  }
+  tags = merge(var.common_tags, { Name = "Public_Subnet_1" })
 }
 
 resource "aws_subnet" "public_2" {
@@ -26,27 +24,21 @@ resource "aws_subnet" "public_2" {
   cidr_block             = var.public_subnet_cidr_2
   availability_zone       = "eu-north-1b"
   map_public_ip_on_launch = true
-  tags = {
-    Name = "Public_Subnet"
-  }
+  tags = merge(var.common_tags, { Name = "Public_Subnet_2" })
 }
 
 resource "aws_subnet" "private_1" {
   vpc_id     = aws_vpc.this.id
   cidr_block = var.private_subnet_cidr_1
   availability_zone = "eu-north-1b"
-  tags = {
-    Name = "Private_Subnet_1"
-  }
+  tags = merge(var.common_tags, { Name = "Private_Subnet_1" })
 }
 
 resource "aws_subnet" "private_2" {
   vpc_id     = aws_vpc.this.id
   cidr_block = var.private_subnet_cidr_2
   availability_zone = "eu-north-1c"
-  tags = {
-    Name = "Private_Subnet_2"
-  }
+  tags = merge(var.common_tags, { Name = "Private_Subnet_2" })
 }
 
 # NAT Gateway

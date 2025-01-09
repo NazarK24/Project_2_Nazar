@@ -20,10 +20,15 @@ module "ecr" {
   source      = "./modules/ecr"
   common_tags = var.common_tags
 
-  # Наприклад, передаємо назви сховищ
+  # Передаємо назви сховищ
   frontend_repo_name      = "my-demo-frontend"
   backend_rds_repo_name   = "my-demo-backend-rds"
   backend_redis_repo_name = "my-demo-backend-redis"
+  
+  # Додаємо теги для образів
+  frontend_image_tag      = var.frontend_image_tag
+  backend_rds_image_tag   = var.backend_rds_image_tag
+  backend_redis_image_tag = var.backend_redis_image_tag
 }
 
 ############
@@ -32,27 +37,38 @@ module "ecr" {
 module "ecs" {
   source = "./modules/ecs"
 
-  vpc_id                   = module.vpc.vpc_id
-  private_subnets          = module.vpc.private_subnets
-  ecs_cluster_name         = "my-demo-ecs-cluster"
-  ecs_instance_type        = "t3.micro"        
-  container_port           = 8000
-  common_tags              = var.common_tags
-  alb_sg_id                = module.alb.alb_sg_id
-
-  # Передаємо посилання на ECR, щоб ECS task definitions посилалися на образи
-  frontend_image_url       = module.ecr.frontend_repo_url
-  backend_rds_image_url    = module.ecr.backend_rds_repo_url
-  backend_redis_image_url  = module.ecr.backend_redis_repo_url
-
-  db_name                  = var.db_name
-  db_user                  = var.db_username
-  db_password              = var.db_password
-  redis_password           = var.redis_password
-
-  # Ресурси для ALB
+  # Базові налаштування
+  vpc_id           = module.vpc.vpc_id
+  private_subnets  = module.vpc.private_subnets
+  ecs_cluster_name = "my-demo-ecs-cluster"
+  common_tags      = var.common_tags
+  
+  # ALB налаштування
+  alb_sg_id               = module.alb.alb_sg_id
   frontend_target_group_arn = module.alb.frontend_target_group_arn
   frontend_listener_arn     = module.alb.frontend_listener_arn
+  backend_rds_target_group_arn = module.alb.backend_rds_target_group_arn
+  backend_redis_target_group_arn = module.alb.backend_redis_target_group_arn
+
+  # Container налаштування
+  frontend_container_port = var.frontend_container_port
+  frontend_image_url      = "${module.ecr.frontend_repo_url}:${var.frontend_image_tag}"
+  backend_rds_image_url   = "${module.ecr.backend_rds_repo_url}:${var.backend_rds_image_tag}"
+  backend_redis_image_url = "${module.ecr.backend_redis_repo_url}:${var.backend_redis_image_tag}"
+
+  # Database налаштування
+  db_host       = module.rds.rds_endpoint
+  db_name       = var.db_name
+  db_user       = var.db_username
+  db_password   = var.db_password
+  
+  # Redis налаштування
+  redis_host     = module.redis.redis_endpoint
+  redis_password = var.redis_password
+
+  # Security Groups
+  rds_sg_id   = module.rds.rds_sg_id
+  redis_sg_id = module.redis.redis_sg_id
 }
 
 ############

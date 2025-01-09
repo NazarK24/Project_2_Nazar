@@ -7,12 +7,21 @@
       "portMappings": [
         {
           "containerPort": 8002,
-          "hostPort": 8002
+          "hostPort": 8002,
+          "protocol": "tcp"
         }
       ],
       "environment": [
         { "name": "REDIS_PASSWORD", "value": "${REDIS_PASSWORD}" }
       ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/backend-redis",
+          "awslogs-region": "eu-north-1",
+          "awslogs-stream-prefix": "backend-redis"
+        }
+      },
       "essential": true
     }
   ]

@@ -14,3 +14,13 @@ variable "frontend_container_port" {
 variable "common_tags" {
   type = map(string)
 }
+
+variable "backend_rds_container_port" {
+  type    = number
+  default = 8001
+}
+
+variable "backend_redis_container_port" {
+  type    = number
+  default = 8002
+}
