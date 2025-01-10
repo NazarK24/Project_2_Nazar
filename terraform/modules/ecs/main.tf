@@ -40,6 +40,13 @@ resource "aws_security_group" "ecs_sg" {
     security_groups = [var.alb_sg_id]
   }
 
+  ingress {
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    self            = true
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -91,6 +98,8 @@ resource "aws_ecs_task_definition" "frontend_task" {
       DB_PASSWORD       = var.db_password
       REDIS_HOST        = var.redis_host
       REDIS_PASSWORD    = var.redis_password
+      BACKEND_RDS_HOST = aws_service_discovery_service.backend_rds.name
+      BACKEND_REDIS_HOST = aws_service_discovery_service.backend_redis.name
     }
   )
 }
@@ -130,8 +139,8 @@ resource "aws_ecs_task_definition" "backend_redis_task" {
     "${path.module}/templates/backend_redis_container.json",
     {
       BACKEND_REDIS_IMAGE_URL = var.backend_redis_image_url
-      REDIS_PASSWORD          = var.redis_password
-      CONTAINER_PORT          = var.backend_redis_container_port
+      REDIS_HOST             = var.redis_host
+      REDIS_PASSWORD         = var.redis_password
     }
   )
 }
@@ -178,6 +187,10 @@ resource "aws_ecs_service" "backend_rds_service" {
     container_name   = "backend-rds"
     container_port   = var.backend_rds_container_port
   }
+
+  service_registries {
+    registry_arn = aws_service_discovery_service.backend_rds.arn
+  }
 }
 
 resource "aws_ecs_service" "backend_redis_service" {
@@ -197,6 +210,10 @@ resource "aws_ecs_service" "backend_redis_service" {
     target_group_arn = var.backend_redis_target_group_arn
     container_name   = "backend-redis"
     container_port   = var.backend_redis_container_port
+  }
+
+  service_registries {
+    registry_arn = aws_service_discovery_service.backend_redis.arn
   }
 }
 
@@ -306,4 +323,37 @@ resource "aws_cloudwatch_log_group" "backend_redis" {
   name              = "/ecs/backend-redis"
   retention_in_days = 14
   tags              = var.common_tags
+}
+
+# Додайте Service Discovery
+resource "aws_service_discovery_private_dns_namespace" "this" {
+  name        = "my-demo.local"
+  vpc         = var.vpc_id
+  description = "Service Discovery Namespace"
+}
+
+resource "aws_service_discovery_service" "backend_rds" {
+  name = "backend-rds"
+
+  dns_config {
+    namespace_id = aws_service_discovery_private_dns_namespace.this.id
+    
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+  }
+}
+
+resource "aws_service_discovery_service" "backend_redis" {
+  name = "backend-redis"
+
+  dns_config {
+    namespace_id = aws_service_discovery_private_dns_namespace.this.id
+    
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+  }
 }

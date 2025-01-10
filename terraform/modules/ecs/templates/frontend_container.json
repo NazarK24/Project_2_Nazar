@@ -17,7 +17,9 @@
       { "name": "DB_USER", "value": "${DB_USER}" },
       { "name": "DB_PASSWORD", "value": "${DB_PASSWORD}" },
       { "name": "REDIS_HOST", "value": "${REDIS_HOST}" },
-      { "name": "REDIS_PASSWORD", "value": "${REDIS_PASSWORD}" }
+      { "name": "REDIS_PASSWORD", "value": "${REDIS_PASSWORD}" },
+      { "name": "BACKEND_RDS_URL", "value": "http://backend-rds.my-demo.local:8001" },
+      { "name": "BACKEND_REDIS_URL", "value": "http://backend-redis.my-demo.local:8002" }
     ],
     "essential": true,
     "logConfiguration": {

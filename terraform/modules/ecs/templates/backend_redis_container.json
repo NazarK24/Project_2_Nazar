@@ -12,7 +12,9 @@
         }
       ],
       "environment": [
-        { "name": "REDIS_PASSWORD", "value": "${REDIS_PASSWORD}" }
+        { "name": "REDIS_HOST", "value": "${REDIS_HOST}" },
+        { "name": "REDIS_PASSWORD", "value": "${REDIS_PASSWORD}" },
+        { "name": "REDIS_PORT", "value": "6379" }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
@@ -24,5 +26,5 @@
       },
       "essential": true
     }
-  ]
+]
   

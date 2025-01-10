@@ -83,14 +83,14 @@ resource "aws_lb_target_group" "backend_rds_target_group" {
   target_type = "ip"
 
   health_check {
-    path                = "/health"
+    path                = "/api/rds/health"
     port                = "traffic-port"
     protocol            = "HTTP"
     matcher             = "200"
-    interval            = 30
-    timeout             = 5
-    unhealthy_threshold = 2
-    healthy_threshold   = 5
+    interval            = 60
+    timeout             = 30
+    unhealthy_threshold = 5
+    healthy_threshold   = 2
   }
 }
 
@@ -118,14 +118,14 @@ resource "aws_lb_target_group" "backend_redis_target_group" {
   target_type = "ip"
 
   health_check {
-    path                = "/health"
+    path                = "/api/redis/health"
     port                = "traffic-port"
     protocol            = "HTTP"
     matcher             = "200"
-    interval            = 30
-    timeout             = 5
-    unhealthy_threshold = 2
-    healthy_threshold   = 5
+    interval            = 60
+    timeout             = 30
+    unhealthy_threshold = 5
+    healthy_threshold   = 2
   }
 }
 

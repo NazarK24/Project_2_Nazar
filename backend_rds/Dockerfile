@@ -13,7 +13,7 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Копіюємо весь код в контейне
-COPY backend_rds /app/
+COPY . . 
 
 # Відкриваємо порт, на якому буде працювати додаток
 EXPOSE 8001
