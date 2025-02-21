@@ -1,53 +1,69 @@
-resource "aws_security_group" "redis_sg" {
-  name   = "redis-sg"
-  vpc_id = var.vpc_id
+#####################################################################
+# Redis Security Group Configuration
+#####################################################################
 
+resource "aws_security_group" "redis_sg" {
+  name_prefix = "redis-sg-"
+  vpc_id      = var.vpc_id
+
+  # Дозволяємо вхідний трафік від ECS задач
+  ingress {
+    description     = "Allow Redis from ECS tasks"
+    from_port       = 6379
+    to_port         = 6379
+    protocol        = "tcp"
+    security_groups = [var.ecs_sg_id]
+  }
+
+  # Дозволяємо весь вихідний трафік
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow all outbound traffic"
   }
 
-  tags = merge(var.common_tags, { Name = "redis-sg" })
+  tags = merge(var.common_tags, {
+    Name    = "redis-sg"
+    Service = "redis"
+  })
 }
 
-resource "aws_security_group_rule" "redis_from_ecs" {
-  type                     = "ingress"
-  from_port                = 6379
-  to_port                  = 6379
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.redis_sg.id
-  source_security_group_id = var.ecs_sg_id
-}
+#####################################################################
+# Redis Subnet Group Configuration
+#####################################################################
 
 resource "aws_elasticache_subnet_group" "this" {
   name       = "my-demo-redis-subnet-group"
   subnet_ids = var.private_subnets
-  tags       = merge(var.common_tags, { Name = "my-demo-redis-subnet-group" })
+  
+  tags = merge(var.common_tags, { Name = "my-demo-redis-subnet-group" })
 }
 
+#####################################################################
+# Redis Cluster Configuration
+#####################################################################
+
 resource "aws_elasticache_replication_group" "this" {
-  replication_group_id = "my-demo-redis"
-  description          = "My Demo Redis"             # заміна replication_group_description
-  engine               = "redis"
-  engine_version       = "6.x"
-  node_type            = "cache.t3.micro"
-
-  # Коли хочемо 1 shard без реплік:
-  num_node_groups         = 1        # 1 shard
-  replicas_per_node_group = 0        # без реплік
-
-  parameter_group_name    = "default.redis6.x"
-  subnet_group_name       = aws_elasticache_subnet_group.this.name
-  security_group_ids      = [aws_security_group.redis_sg.id]
-  automatic_failover_enabled = false
-  port                    = 6379
-
-  # Якщо вам потрібен пароль (AUTH):
-   auth_token = var.redis_password
-   transit_encryption_enabled = true
-   at_rest_encryption_enabled = true
-
-  tags = merge(var.common_tags, { Name = "my-demo-redis" })
+  replication_group_id          = "my-demo-redis"
+  description                  = "Redis cluster for My Demo application"
+  
+  # Базові налаштування Redis
+  engine                      = "redis"
+  engine_version             = "7.0"
+  node_type                  = "cache.t3.micro"
+  port                       = 6379
+  
+  # Налаштування кластера
+  num_cache_clusters         = 1
+  
+  # Мережеві налаштування
+  subnet_group_name         = aws_elasticache_subnet_group.this.name
+  security_group_ids        = [aws_security_group.redis_sg.id]
+  
+  tags = merge(var.common_tags, {
+    Name    = "my-demo-redis"
+    Service = "redis"
+  })
 }

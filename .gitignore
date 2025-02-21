@@ -1,9 +1,14 @@
-# Terraform
+# Вихідні файли Terraform
 *.tfstate
-*.tfstate.*
+*.tfstate.backup
 .terraform/
 .terraform.lock.hcl
 
-# Variables
+# Локальні змінні (якщо використовуєш)
+terraform.tfvars
 *.auto.tfvars
-*.tfvars
+
+# Логи та тимчасові файли
+crash.log
+*.log
+*.bak

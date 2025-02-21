@@ -6,10 +6,6 @@ variable "private_subnets" {
   type = list(string)
 }
 
-variable "redis_password" {
-  type = string
-}
-
 variable "ecs_sg_id" {
   type = string
 }
