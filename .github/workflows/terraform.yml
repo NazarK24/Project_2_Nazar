@@ -18,12 +18,39 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download terraform.tfvars artifact (if exists)
+      - name: Download frontend.tfvars artifact (if exists)
         uses: actions/download-artifact@v4
         with:
-          name: terraform-vars
-          path: .
-        continue-on-error: true  # Якщо артефакт відсутній, пайплайн не має падати
+          name: frontend-vars
+          path: ./
+        continue-on-error: true
+
+      - name: Download backend_rds.tfvars artifact (if exists)
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-rds-vars
+          path: ./
+        continue-on-error: true
+
+      - name: Download backend_redis.tfvars artifact (if exists)
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-redis-vars
+          path: ./
+        continue-on-error: true
+
+      - name: Combine tfvars files
+        run: |
+          # Створюємо єдиний terraform.tfvars файл з усіх окремих
+          cat frontend.tfvars backend_rds.tfvars backend_redis.tfvars > terraform.tfvars 2>/dev/null || true
+          
+          # Якщо файл порожній, додаємо базові значення
+          if [ ! -s terraform.tfvars ]; then
+            echo "# Default values" > terraform.tfvars
+            echo "frontend_image_tag = \"latest\"" >> terraform.tfvars
+            echo "backend_rds_image_tag = \"latest\"" >> terraform.tfvars
+            echo "backend_redis_image_tag = \"latest\"" >> terraform.tfvars
+          fi
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
@@ -41,7 +68,7 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -var-file=terraform.tfvars -out=tfplan || terraform plan -out=tfplan  # Якщо tfvars немає, просто план без нього
+        run: terraform plan -var-file=terraform.tfvars -out=tfplan
 
       - name: Terraform Apply
         if: github.ref_name == 'main'

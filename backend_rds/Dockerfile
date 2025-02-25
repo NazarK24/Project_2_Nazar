@@ -1,7 +1,7 @@
 # Вибираємо офіційний базовий образ Python
 FROM python:3.11-slim
 
-# Додаємо метаінформацію про обр
+# Додаємо метаінформацію про об
 ARG VERSION=unknown
 LABEL version=$VERSION
 
