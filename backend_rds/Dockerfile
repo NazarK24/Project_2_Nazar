@@ -5,7 +5,7 @@ FROM python:3.11-slim
 ARG VERSION=unknown
 LABEL version=$VERSION
 
-# Встановлюємо робочу директорію всередині контейне
+# Встановлюємо робочу директорію всередині контейн
 WORKDIR /app
 
 # Копіюємо файл requirements.txt і встановлюємо залежн
