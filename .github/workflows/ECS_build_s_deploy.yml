@@ -34,6 +34,14 @@ jobs:
 
       - name: Build and push Docker image
         run: |
+          if [ "${{ matrix.service }}" == "frontend" ]; then
+            REPO_NAME="my-demo-frontend"
+          elif [ "${{ matrix.service }}" == "backend_rds" ]; then
+            REPO_NAME="my-demo-backend-rds"
+          elif [ "${{ matrix.service }}" == "backend_redis" ]; then
+            REPO_NAME="my-demo-backend-redis"
+          fi
+         
           IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ matrix.service }}:$IMAGE_VERSION
           docker build -t $IMAGE_URI --build-arg VERSION=$IMAGE_VERSION ./${{ matrix.service }}
           docker push $IMAGE_URI
