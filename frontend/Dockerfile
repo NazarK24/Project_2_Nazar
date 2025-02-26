@@ -6,7 +6,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-#тест фронтенд пайплайн
+#тест фронтенд пайплай
 ARG VERSION=unknown
 LABEL version=$VERSION
 
