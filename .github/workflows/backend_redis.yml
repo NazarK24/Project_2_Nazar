@@ -57,7 +57,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Оновити Task Definition і деплоїти
+      - name: Оновити Task Definition, деплоїти
         run: |
           REPO_NAME="my-demo-backend-redis"
           IMAGE_VERSION=$(echo ${GITHUB_SHA} | cut -c1-7)
